@@ -4,20 +4,29 @@
 //	  digital pin 4(arduino rx, fps tx)
 //	  digital pin 5(arduino tx - 560ohm resistor - fps tx - 1000ohm resistor - ground)
 //		this voltage divider brings the 5v tx line down to about 3.2v so we dont fry our fps
-long option = 0;
+//long option = 0;
+int pin_switch = 2;
+//boolean Fstatus = LOW;
 FPS_GT511C3 fps(4, 5);
 void setup()
 {
 	Serial.begin(9600);
 	delay(100);
+  //pinMode(pin_switch, INPUT);
+  //pinMode(5, INPUT);
+ // pinMode(4, OUTPUT);
 	fps.Open();
+  //attachInterrupt( digitalPinToInterrupt(pin_switch), blink, CHANGE );
 }
+
 void Enroll()
 {
   fps.SetLED(true);
- 
+ //Fstatus == LOW;
   // Enroll test
   // find open enroll id
+  if ( fps.IsPressFinger() ) 
+  {
   int enrollid = 0;
   bool okid = false;
   while ( okid == false )
@@ -72,13 +81,15 @@ void Enroll()
     else Serial.println("Failed to capture second finger");
   }
   else Serial.println("Failed to capture first finger");
+  }
 fps.SetLED(false);
 }
 void Verify()
 {
   fps.SetLED(true);
+//  Fstatus == HIGH;
   // Identify fingerprint test
-  do 
+  if ( fps.IsPressFinger() ) 
   {
     Serial.println("Please press finger");
     fps.CaptureFinger(false);
@@ -93,7 +104,7 @@ void Verify()
       Serial.println("Finger not found");
      }
   }
-  while (  !fps.IsPressFinger() );
+ // while (  !fps.IsPressFinger() );
  // else
  // {
   //  Serial.println("Please press finger");
@@ -102,57 +113,23 @@ void Verify()
  }
 void loop()
 {
-  Serial.println("1.Verfy 2.Enroll 3.Enroll Count\nSelect one of the above option ");
-  if( Serial.available() > 0  )
-  {
-    option = Serial.read();
-    Serial.print("Selected option: ");
-    Serial.println( option-48  , DEC);
-  }
-  if( option  ==  49  )
-  {
-    Verify();
-  }
-  else  if ( option ==  50 )
-  {
-    Enroll(); 
-  }
-  else  if ( option ==  51 )
-  {
-    int count = fps.GetEnrollCount();
-    Serial.print( " Total ID Enrolled :-" ); 
-    Serial.println( count  , DEC);
-    for(int i=0;i<200;i++)
+   while ( digitalRead(pin_switch) == HIGH) 
     {
-      fps.CheckEnrolled(i);
-      Serial.print(fps.CheckEnrolled(i)); 
+      Serial.print("Verify Mode");
+      Serial.println(digitalRead(pin_switch),BIN);
+       //digitalWrite(pin_LED, HIGH);
+       Verify();
     }
-  }
-  else  if ( option ==  52 )
-  {
-    fps.SetLED(true);
-     int admin = 1;
-  //while (  fps.IsPressFinger() == false)
-  //{
-   //Serial.println("Admin press finger");
-  //while(  admin !=  0  )
+    //else 
     //{
-      fps.CaptureFinger(false);
-        admin = fps.Verify1_1(0);
-      Serial.println(admin);
-      fps.CaptureFinger(false);
-      int id = fps.Identify1_N();
-    if (id <200)
-    {
-      Serial.print("Verified ID:");
-      Serial.println(id);
-    }
-   // //}
-  }
+       Serial.print("Enroll Mode");
+       Serial.println(digitalRead(pin_switch),BIN);
+       //digitalWrite(pin_LED, LOW);
+       Enroll();
+    //}
+    
   fps.SetLED(false);
-  option = 0;
-  
-  //fps.SetLED(false);
 	delay(5000);
   Serial.flush();
+  
 }
